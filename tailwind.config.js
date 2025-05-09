@@ -9,9 +9,6 @@ const config = {
   ],
   theme: {
     extend: {
-      colors: {
-        primary: "#b45309"
-      },
       fontFamily: {
         sans: ["var(--font-sans)"],
         mono: ["var(--font-mono)"],
@@ -19,7 +16,20 @@ const config = {
     },
   },
   darkMode: "class",
-  plugins: [heroui()],
+  plugins: [heroui(
+    {themes: {
+      light: {
+        colors: {
+          primary: '#f59e0b'
+        }
+      },
+      dark: {
+        colors: {
+        primary: "#b45309"
+      }
+      }
+    }}
+  )],
 }
 
 module.exports = config;
