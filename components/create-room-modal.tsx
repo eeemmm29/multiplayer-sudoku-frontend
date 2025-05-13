@@ -9,7 +9,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@heroui/modal";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
 interface CreateEnterRoomModalProps {
   isOpen: boolean;
@@ -24,11 +24,7 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
   onClose,
   mode,
 }) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<JoinRoomForm>();
+  const { control, handleSubmit } = useForm<JoinRoomForm>();
 
   const headerText =
     mode === "create" ? "A new room will be created" : "Join a Room";
@@ -51,9 +47,10 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
         <Form onSubmit={handleSubmit(onSubmit)}>
           {mode === "join" && (
             <ModalBody>
-              <Input
-                label="Room Code (4 characters)"
-                {...register("roomCode", {
+              <Controller
+                name="roomCode"
+                control={control}
+                rules={{
                   required: "Room code is required",
                   minLength: { value: 4, message: "Must be 4 characters" },
                   maxLength: { value: 4, message: "Must be 4 characters" },
@@ -61,14 +58,17 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
                     value: /^[A-Za-z0-9]{4}$/,
                     message: "Only letters and numbers allowed",
                   },
-                })}
-                maxLength={4}
+                }}
+                render={({ field, fieldState: { invalid, error } }) => (
+                  <Input
+                    label="Room Code (4 characters)"
+                    maxLength={4}
+                    isInvalid={invalid}
+                    errorMessage={error?.message}
+                    {...field}
+                  />
+                )}
               />
-              {errors.roomCode && (
-                <span className="text-red-500 text-xs">
-                  {errors.roomCode.message}
-                </span>
-              )}
             </ModalBody>
           )}
           <ModalFooter className="w-full">
