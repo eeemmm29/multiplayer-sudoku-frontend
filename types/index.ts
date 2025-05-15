@@ -9,3 +9,7 @@ export type ModalMode = "create" | "join" | null;
 export interface JoinRoomForm {
   roomCode: string;
 }
+
+export interface CreateRoomResponse {
+  roomCode: string;
+}
