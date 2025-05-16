@@ -1,20 +1,9 @@
 "use client";
 
-import { useSocket } from "@/utils/useSocket";
-import { Client } from "@stomp/stompjs";
+import { GameAction, useWebSocket } from "@/hooks/use-web-socket";
+import { Cell } from "@/types";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-
-// TypeScript types for the board and message
-export type Cell = {
-  value: number;
-  status: string;
-};
-
-export type BoardsMessage = {
-  myBoard: Cell[][];
-  opponentBoard: Cell[][] | null;
-};
 
 function cellStatusToColor(status: string) {
   switch (status) {
@@ -37,15 +26,15 @@ function SudokuBoard({
   disabled,
 }: {
   board: Cell[][];
-  onCellInput?: (row: number, col: number, value: number) => void;
+  onCellInput?: (action: GameAction) => void;
   disabled?: boolean;
 }) {
   return (
     <table className="border-collapse">
       <tbody>
-        {board.map((row, rIdx) => (
+        {board?.map((row, rIdx) => (
           <tr key={rIdx}>
-            {row.map((cell, cIdx) => (
+            {row?.map((cell, cIdx) => (
               <td
                 key={cIdx}
                 className={`border w-10 h-10 text-center ${cellStatusToColor(cell.status)}`}
@@ -63,7 +52,12 @@ function SudokuBoard({
                       if (onCellInput) {
                         const val = parseInt(e.target.value, 10);
                         if (!isNaN(val) && val >= 1 && val <= 9) {
-                          onCellInput(rIdx, cIdx, val);
+                          onCellInput({
+                            row: rIdx,
+                            col: cIdx,
+                            value: val,
+                            type: "FILL",
+                          });
                         }
                       }
                     }}
@@ -80,76 +74,41 @@ function SudokuBoard({
 }
 
 export default function GamePage() {
-  const [boards, setBoards] = useState<BoardsMessage | null>(null);
   const searchParams = useSearchParams();
   const roomCodeFromUrl = searchParams.get("roomCode") || "";
-  const [roomCode, setRoomCode] = useState(roomCodeFromUrl);
-  const [connected, setConnected] = useState(false);
-  const clientRef = useSocket(onConnect);
-
-  function onConnect(client: Client) {
-    if (!roomCode) return;
-    // Subscribe to boards updates for this user/room
-    const sub = client.subscribe(
-      `/user/topic/room/${roomCode}/boards`,
-      (message) => {
-        const msg: BoardsMessage = JSON.parse(message.body);
-        setBoards(msg);
-      }
-    );
-    setConnected(true);
-    // Send join message
-    client.publish({
-      destination: `/app/room/${roomCode}/start`,
-      body: "{}",
-    });
-    return () => sub.unsubscribe();
-  }
-
-  function handleCellInput(row: number, col: number, value: number) {
-    if (!clientRef.current || !connected) return;
-    clientRef.current.publish({
-      destination: `/app/room/${roomCode}/action`,
-      body: JSON.stringify({
-        type: "FILL",
-        row,
-        col,
-        value,
-      }),
-    });
-  }
+  const [roomCode] = useState(roomCodeFromUrl);
+  const { boards, status, sendGameAction } = useWebSocket(roomCode);
 
   return (
     <div className="flex flex-col items-center gap-8 p-8">
       <h1 className="text-2xl font-bold">Multiplayer Sudoku</h1>
-      <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="Room Code"
-          value={roomCode}
-          onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-          maxLength={4}
-          className="border p-2 rounded"
-        />
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={() => {
-            if (!roomCode || !clientRef.current) return;
-            clientRef.current.publish({
-              destination: `/app/room/${roomCode}/start`,
-              body: "{}",
-            });
-          }}
-          disabled={!roomCode}
-        >
-          Join Room
-        </button>
+      <div className="flex gap-4 items-center">
+        <span className="font-mono text-gray-600">Room Code:</span>
+        <span className="font-mono text-lg bg-gray-100 text-black px-3 py-1 rounded select-all">
+          {roomCode}
+        </span>
+      </div>
+      {/* Opponent status message */}
+      <div className="text-lg mt-2">
+        {boards && boards.playerCount !== undefined ? (
+          <span className="text-blue-600">
+            Players in room: {boards.playerCount}
+          </span>
+        ) : null}
+        <br />
+        {!boards || !boards.opponentBoard ? (
+          <span className="text-gray-500">Waiting for opponent to join...</span>
+        ) : (
+          <span className="text-green-600 font-semibold">
+            Opponent has joined!
+          </span>
+        )}
       </div>
       {boards && (
         <div className="flex gap-12">
           <div>
             <h2 className="font-semibold mb-2">Your Board</h2>
-            <SudokuBoard board={boards.myBoard} onCellInput={handleCellInput} />
+            <SudokuBoard board={boards.myBoard} onCellInput={sendGameAction} />
           </div>
           <div>
             <h2 className="font-semibold mb-2">Opponent's Board</h2>

@@ -13,3 +13,14 @@ export interface JoinRoomForm {
 export interface CreateRoomResponse {
   roomCode: string;
 }
+
+export type Cell = {
+  value: number;
+  status: string;
+};
+
+export type BoardsMessage = {
+  myBoard: Cell[][];
+  opponentBoard: Cell[][] | null;
+  playerCount?: number;
+};

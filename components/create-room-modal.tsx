@@ -1,5 +1,4 @@
 import { CreateRoomResponse, JoinRoomForm, ModalMode } from "@/types";
-import { useSocket } from "@/utils/useSocket";
 import { Button } from "@heroui/button";
 import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
@@ -28,32 +27,33 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
 }) => {
   const { control, handleSubmit } = useForm<JoinRoomForm>();
   const router = useRouter();
-  const clientRef = useSocket();
 
   const headerText =
     mode === "create" ? "A new room will be created" : "Join a Room";
 
   const onSubmit = async (data: JoinRoomForm) => {
-    // Wait for STOMP client to be connected before sending
-    if (!clientRef.current || !clientRef.current.connected) return;
     if (mode === "create") {
-      // Subscribe to room created response
-      const sub = clientRef.current.subscribe(
-        "/user/topic/room/created",
-        (message) => {
-          const response: CreateRoomResponse = JSON.parse(message.body);
-          if (response && response.roomCode) {
-            router.push(`/game?roomCode=${response.roomCode}`);
-            onClose();
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/room`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              // Optionally add session id header if needed
+            },
           }
-          sub.unsubscribe();
+        );
+        if (!res.ok) throw new Error("Failed to create room");
+        const response: CreateRoomResponse = await res.json();
+        if (response && response.roomCode) {
+          router.push(`/game?roomCode=${response.roomCode}`);
+          onClose();
         }
-      );
-      // Send create room request
-      clientRef.current.publish({
-        destination: "/app/room/create",
-        body: JSON.stringify({}),
-      });
+      } catch (e) {
+        // Optionally handle error
+        alert("Failed to create room");
+      }
     } else if (mode === "join") {
       router.push(`/game?roomCode=${data.roomCode}`);
       onClose();
