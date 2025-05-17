@@ -17,6 +17,7 @@ export interface CreateRoomResponse {
 export type Cell = {
   value: number;
   status: string;
+  cooldownUntil?: number; // timestamp in ms, optional
 };
 
 export type BoardsListMessage = {
