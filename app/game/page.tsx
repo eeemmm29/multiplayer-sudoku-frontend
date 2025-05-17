@@ -1,79 +1,11 @@
 "use client";
 
-import { GameAction, useWebSocket } from "@/hooks/use-web-socket";
-import { Cell } from "@/types";
+import SudokuBoard from "@/components/sudoku-board";
+import { useWebSocket } from "@/hooks/use-web-socket";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-function cellStatusToColor(status: string) {
-  switch (status) {
-    case "GIVEN":
-      return "bg-gray-200 text-black";
-    case "TO_GUESS":
-      return "bg-yellow-100 text-gray-700";
-    case "CORRECT_GUESS":
-      return "bg-green-200 text-black";
-    case "WRONG_GUESS":
-      return "bg-red-200 text-black";
-    default:
-      return "";
-  }
-}
-
-function SudokuBoard({
-  board,
-  onCellInput,
-  disabled,
-}: {
-  board: Cell[][];
-  onCellInput?: (action: GameAction) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <table className="border-collapse">
-      <tbody>
-        {board?.map((row, rIdx) => (
-          <tr key={rIdx}>
-            {row?.map((cell, cIdx) => (
-              <td
-                key={cIdx}
-                className={`border w-10 h-10 text-center ${cellStatusToColor(cell.status)}`}
-              >
-                {cell.status === "GIVEN" ? (
-                  <span>{cell.value}</span>
-                ) : (
-                  <input
-                    type="number"
-                    min={1}
-                    max={9}
-                    value={cell.value === 0 ? "" : cell.value}
-                    disabled={disabled}
-                    onChange={(e) => {
-                      if (onCellInput) {
-                        const val = parseInt(e.target.value, 10);
-                        if (!isNaN(val) && val >= 1 && val <= 9) {
-                          onCellInput({
-                            row: rIdx,
-                            col: cIdx,
-                            value: val,
-                            type: "FILL",
-                          });
-                        }
-                      }
-                    }}
-                    className="w-8 h-8 text-center border-none bg-transparent"
-                  />
-                )}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-export default function GamePage() {
+const GamePage = () => {
   const searchParams = useSearchParams();
   const roomCodeFromUrl = searchParams.get("roomCode") || "";
   const [roomCode] = useState(roomCodeFromUrl);
@@ -150,4 +82,6 @@ export default function GamePage() {
       )}
     </div>
   );
-}
+};
+
+export default GamePage;
