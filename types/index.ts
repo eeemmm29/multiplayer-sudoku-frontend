@@ -23,4 +23,10 @@ export type Cell = {
 export type BoardsListMessage = {
   boards: Record<string, Cell[][]>; // sessionId -> board
   playerCount: number;
+  filledCounts: Record<string, number>;
+  stepsAhead: Record<string, number>;
+  canRemoveOpponentCell?: boolean;
+  removeCooldownUntil?: number;
+  canRemoveOpponentCellMap?: Record<string, boolean>;
+  removeCooldownUntilMap?: Record<string, number>;
 };

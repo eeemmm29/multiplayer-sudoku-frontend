@@ -6,6 +6,7 @@ import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
 import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import ButtonWithLabels from "@/components/button-with-labels";
 
 const GamePage = () => {
   const searchParams = useSearchParams();
@@ -23,6 +24,7 @@ const GamePage = () => {
     "Click to copy the room code"
   );
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [removalMode, setRemovalMode] = useState(false);
 
   const handleCopyRoomCode = async () => {
     if (roomCode) {
@@ -81,12 +83,50 @@ const GamePage = () => {
     )
   );
 
+  // Use per-player eligibility maps from backend
+  const canRemoveOpponentCell =
+    boards?.canRemoveOpponentCellMap && sessionId
+      ? boards.canRemoveOpponentCellMap[sessionId]
+      : false;
+  const removalCooldown =
+    boards?.removeCooldownUntilMap && sessionId
+      ? Math.max(
+          0,
+          Math.ceil(
+            ((boards.removeCooldownUntilMap[sessionId] || 0) - Date.now()) /
+              1000
+          )
+        )
+      : 0;
+
+  const handleRemoveClick = () => {
+    setRemovalMode((m) => !m);
+  };
+
+  const handleRemoveOpponentCell = (
+    targetSessionId: string,
+    row: number,
+    col: number
+  ) => {
+    if (!removalMode || !sessionId) return;
+    sendGameAction({
+      type: "REMOVE",
+      row,
+      col,
+      value: 0,
+      sessionId: targetSessionId,
+    });
+    setRemovalMode(false);
+  };
+
   // Get the list of session IDs from the backend boards object
   let sessionIds = boards ? Object.keys(boards.boards) : [];
   // Always show the current user's board first (leftmost)
   if (sessionId && sessionIds.includes(sessionId)) {
     sessionIds = [sessionId, ...sessionIds.filter((id) => id !== sessionId)];
   }
+
+  if (!boards) return null;
 
   // Show all boards, but only allow editing for the current user's board
   return (
@@ -111,44 +151,103 @@ const GamePage = () => {
           <div className="mb-2 p-3 rounded bg-green-100 text-green-800 font-bold border border-green-400">
             {winnerSessionId === sessionId
               ? "🎉 Congratulations! You solved the puzzle!"
-              : `🎉 Player ${winnerSessionId.slice(-4)} has won!`}
+              : `🎉 Player ${winnerSessionId?.slice(-4)} has won!`}
           </div>
         )}
-        {boards && boards.playerCount !== undefined ? (
+        {boards.playerCount !== undefined ? (
           <span className="text-blue-600">
             Players in room: {boards.playerCount}
           </span>
         ) : null}
         <br />
-        {!gameStarted && boards?.playerCount === 2 ? (
+        {!gameStarted && boards.playerCount === 2 ? (
           <Button className="bg-blue-500 rounded" onPress={startGame}>
             Start Game
           </Button>
         ) : null}
-        {boards === null ? (
-          <span className="text-gray-500">Waiting for boards...</span>
-        ) : boards.playerCount === 2 ? null : (
+        {boards.playerCount === 2 ? null : (
           <span className="text-gray-500">Waiting for opponent to join...</span>
         )}
       </div>
-      {gameStarted && boards && (
-        <div className="flex gap-12">
-          {sessionIds.map((playerId) => (
-            <div key={playerId}>
-              <h2 className="font-semibold mb-2">
-                {playerId === sessionId
-                  ? "Your Board"
-                  : `Player ${playerId.slice(-4)}`}
-              </h2>
-              <SudokuBoard
-                board={boards.boards[playerId]}
-                onCellInput={
-                  playerId === sessionId ? sendGameAction : undefined
-                }
-                disabled={playerId !== sessionId}
-              />
-            </div>
-          ))}
+      {gameStarted && (
+        <div className="flex flex-col items-center gap-4">
+          <div className="mb-4">
+            <ButtonWithLabels
+              labelJapanese="数字を消す"
+              labelEnglish="Remove Number"
+              isDisabled={!canRemoveOpponentCell || removalCooldown > 0}
+              onPress={handleRemoveClick}
+              className={removalMode ? "ring-2 ring-red-400" : ""}
+            />
+            {removalCooldown > 0 && (
+              <span className="ml-2 text-sm text-gray-500">
+                Cooldown: {removalCooldown}s
+              </span>
+            )}
+            {removalMode && (
+              <span className="ml-2 text-sm text-red-500">
+                Click a cell on your opponent's board to remove
+              </span>
+            )}
+          </div>
+          <div className="flex gap-12">
+            {sessionIds.map((playerId) => (
+              <div key={playerId}>
+                <h2 className="font-semibold mb-2">
+                  {playerId === sessionId
+                    ? "Your Board"
+                    : `Player ${playerId.slice(-4)}`}
+                </h2>
+                {/* Steps to completion */}
+                <div className="mb-2 text-sm text-gray-700 font-medium">
+                  Steps to completion:
+                  {
+                    boards.boards[playerId]
+                      .flat()
+                      .filter(
+                        (cell) =>
+                          cell.status !== "GIVEN" &&
+                          cell.status !== "CORRECT_GUESS"
+                      ).length
+                  }
+                </div>
+                {/* Steps ahead display */}
+                {boards.stepsAhead &&
+                  boards.stepsAhead[playerId] !== undefined &&
+                  sessionId &&
+                  playerId !== sessionId && (
+                    <div className="mb-2 text-sm text-blue-700 font-medium">
+                      {(() => {
+                        const diff =
+                          boards.stepsAhead[playerId] -
+                          boards.stepsAhead[sessionId];
+                        if (diff > 0)
+                          return `This player is ${diff} steps ahead of you.`;
+                        if (diff < 0)
+                          return `You are ${-diff} steps ahead of this player.`;
+                        return "You are tied with this player.";
+                      })()}
+                    </div>
+                  )}
+                <SudokuBoard
+                  board={boards.boards[playerId]}
+                  onCellInput={
+                    playerId === sessionId
+                      ? (action) => sendGameAction({ ...action, sessionId })
+                      : removalMode && playerId !== sessionId
+                        ? (action) =>
+                            handleRemoveOpponentCell(
+                              playerId,
+                              action.row!,
+                              action.col!
+                            )
+                        : undefined
+                  }
+                  disabled={playerId !== sessionId && !removalMode}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
