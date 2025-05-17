@@ -43,11 +43,19 @@ const SudokuBoard = ({
                     min={1}
                     max={9}
                     value={cell.value === 0 ? "" : cell.value}
-                    disabled={disabled}
+                    disabled={disabled || cell.status === "CORRECT_GUESS"}
                     onChange={(e) => {
                       if (onCellInput) {
                         const val = parseInt(e.target.value, 10);
-                        if (!isNaN(val) && val >= 1 && val <= 9) {
+                        if (e.target.value === "" || isNaN(val)) {
+                          // Allow clearing the cell (backspace/delete)
+                          onCellInput({
+                            row: rIdx,
+                            col: cIdx,
+                            value: 0,
+                            type: "REMOVE",
+                          });
+                        } else if (val >= 1 && val <= 9) {
                           onCellInput({
                             row: rIdx,
                             col: cIdx,

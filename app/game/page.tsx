@@ -26,7 +26,11 @@ const GamePage = () => {
   console.log("boards", boards);
 
   // Get the list of session IDs from the backend boards object
-  const sessionIds = boards ? Object.keys(boards.boards) : [];
+  let sessionIds = boards ? Object.keys(boards.boards) : [];
+  // Always show the current user's board first (leftmost)
+  if (sessionId && sessionIds.includes(sessionId)) {
+    sessionIds = [sessionId, ...sessionIds.filter((id) => id !== sessionId)];
+  }
 
   // Show all boards, but only allow editing for the current user's board
   return (
