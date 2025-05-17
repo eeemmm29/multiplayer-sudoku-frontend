@@ -24,6 +24,7 @@ export function useWebSocket(room: string | null) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [boards, setBoards] = useState<BoardsListMessage | null>(null);
   const [status, setStatus] = useState<string>("Disconnected");
+  const [winnerSessionId, setWinnerSessionId] = useState<string | null>(null);
   const stompClient = useRef<Client | null>(null);
   let sock: any; // define sock here to use in onConnect
 
@@ -50,9 +51,18 @@ export function useWebSocket(room: string | null) {
 
         setStatus(`Joined room: ${room}`);
         client.subscribe(`/topic/room/${room}`, (msg) => {
-          const message: BoardsListMessage = JSON.parse(msg.body);
-          console.log("Received message:", message);
-          setBoards(message);
+          try {
+            const message = JSON.parse(msg.body);
+            if (message.type === "WIN" && message.sessionId) {
+              setWinnerSessionId(message.sessionId);
+              console.log("Winner session ID:", message.sessionId);
+            } else {
+              setBoards(message);
+            }
+          } catch (e) {
+            // fallback: treat as boards message
+            setBoards(JSON.parse(msg.body));
+          }
         });
         console.log("Subscribed to topic:", `/topic/room/${room}`);
         client.publish({
@@ -112,5 +122,12 @@ export function useWebSocket(room: string | null) {
   // Expose stompClient ref for advanced subscriptions
   (useWebSocket as any).stompClientRef = stompClient;
 
-  return { boards, sessionId, status, sendGameAction, startGame };
+  return {
+    boards,
+    sessionId,
+    status,
+    sendGameAction,
+    startGame,
+    winnerSessionId,
+  };
 }
