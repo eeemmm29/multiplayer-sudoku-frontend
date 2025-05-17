@@ -1,5 +1,6 @@
 import { GameAction } from "@/hooks/use-web-socket";
 import { Cell } from "@/types";
+import clsx from "clsx";
 
 const SudokuBoard = ({
   board,
@@ -33,7 +34,16 @@ const SudokuBoard = ({
             {row?.map((cell, cIdx) => (
               <td
                 key={cIdx}
-                className={`border w-10 h-10 text-center ${cellStatusToColor(cell.status)}`}
+                className={clsx(
+                  "border border-gray-700 w-10 h-10 text-center",
+                  cellStatusToColor(cell.status),
+                  {
+                    "border-l-4": cIdx % 3 === 0,
+                    "border-t-4": rIdx % 3 === 0,
+                    "border-r-4": cIdx === 8,
+                    "border-b-4": rIdx === 8,
+                  }
+                )}
               >
                 {cell.status === "GIVEN" ? (
                   <span>{cell.value}</span>
@@ -65,7 +75,14 @@ const SudokuBoard = ({
                         }
                       }
                     }}
-                    className="w-8 h-8 text-center border-none bg-transparent"
+                    onKeyDown={(e) => {
+                      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                        e.preventDefault();
+                      }
+                    }}
+                    className="w-8 h-8 text-center border-none bg-transparent appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" // disables arrows in Chrome/Safari/Edge
+                    inputMode="numeric" // disables arrows in mobile browsers
+                    pattern="[0-9]*" // disables arrows in some browsers
                   />
                 )}
               </td>
