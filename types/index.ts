@@ -19,12 +19,6 @@ export type Cell = {
   status: string;
 };
 
-export type BoardsMessage = {
-  myBoard: Cell[][];
-  opponentBoard: Cell[][] | null;
-  playerCount?: number;
-};
-
 export type BoardsListMessage = {
   boards: Record<string, Cell[][]>; // sessionId -> board
   playerCount: number;
