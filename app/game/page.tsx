@@ -2,8 +2,11 @@
 
 import SudokuBoard from "@/components/sudoku-board";
 import { useWebSocket } from "@/hooks/use-web-socket";
+import { Button } from "@heroui/button";
+import { Tooltip } from "@heroui/tooltip";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const GamePage = () => {
   const searchParams = useSearchParams();
@@ -11,6 +14,30 @@ const GamePage = () => {
   const [roomCode] = useState(roomCodeFromUrl);
   const { boards, sessionId, status, sendGameAction, startGame } =
     useWebSocket(roomCode);
+  const {
+    boards,
+    sessionId,
+    status,
+    sendGameAction,
+    startGame,
+    winnerSessionId,
+  } = useWebSocket(roomCode);
+  const [tooltipContent, setTooltipContent] = useState(
+    "Click to copy the room code"
+  );
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+
+  const handleCopyRoomCode = async () => {
+    if (roomCode) {
+      await navigator.clipboard.writeText(roomCode);
+      setTooltipContent("Copied!");
+      setIsTooltipOpen(true); // Keep tooltip open
+      setTimeout(() => {
+        setTooltipContent("Click to copy the room code");
+        setIsTooltipOpen(false);
+      }, 1200);
+    }
+  };
 
   // Track if the game has started (boards are present and have cells)
   const gameStarted = !!(
@@ -37,10 +64,17 @@ const GamePage = () => {
     <div className="flex flex-col items-center gap-8 p-8">
       <h1 className="text-2xl font-bold">Multiplayer Sudoku</h1>
       <div className="flex gap-4 items-center">
-        <span className="font-mono text-gray-600">Room Code:</span>
-        <span className="font-mono text-lg bg-gray-100 text-black px-3 py-1 rounded select-all">
-          {roomCode}
-        </span>
+        <span className="font-mono text-gray-300">Room Code:</span>
+        <Tooltip content={tooltipContent} isOpen={isTooltipOpen}>
+          <Button
+            className="font-mono text-lg bg-gray-100 text-black rounded"
+            onPress={handleCopyRoomCode}
+            onMouseLeave={() => setIsTooltipOpen(false)}
+            onMouseEnter={() => setIsTooltipOpen(true)}
+          >
+            {roomCode}
+          </Button>
+        </Tooltip>
       </div>
       {/* Opponent status message */}
       <div className="text-lg mt-2">
@@ -51,10 +85,7 @@ const GamePage = () => {
         ) : null}
         <br />
         {!gameStarted && boards?.playerCount === 2 ? (
-          <button
-            className="px-4 py-2 bg-blue-500 text-white rounded mt-2"
-            onClick={startGame}
-          >
+          <Button className="bg-blue-500 rounded" onPress={startGame}>
             Start Game
           </button>
         ) : null}
