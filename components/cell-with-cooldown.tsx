@@ -14,6 +14,7 @@ interface CellWithCooldownProps {
   setSelected: (selected: { row: number; col: number }) => void;
   handleKeyDown: (e: React.KeyboardEvent, rIdx: number, cIdx: number) => void;
   cooldownUntil: number;
+  removalMode?: boolean;
 }
 
 const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
@@ -27,6 +28,7 @@ const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
   setSelected,
   handleKeyDown,
   cooldownUntil,
+  removalMode = false,
 }) => {
   const [, setNow] = useState(Date.now());
 
@@ -39,6 +41,7 @@ const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
 
   const remaining = cooldownUntil - Date.now();
   const isOnCooldown = remaining > 0;
+  const isRemovable = cell.value !== 0;
 
   const cellStatusToColor = (status: string) => {
     switch (status) {
@@ -55,6 +58,14 @@ const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
     }
   };
 
+  const handleClick = () => {
+    if (removalMode && isRemovable && onCellInput) {
+      onCellInput({ type: "REMOVE", row: rIdx, col: cIdx });
+    } else {
+      setSelected({ row: rIdx, col: cIdx });
+    }
+  };
+
   return (
     <td
       className={clsx(
@@ -68,9 +79,11 @@ const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
           "outline outline-2 outline-blue-400":
             selected?.row === rIdx && selected?.col === cIdx,
           "opacity-60": isOnCooldown,
+          "cursor-pointer bg-red-100 hover:bg-red-200":
+            removalMode && isRemovable,
         }
       )}
-      onClick={() => setSelected({ row: rIdx, col: cIdx })}
+      onClick={handleClick}
     >
       {cell.status === "GIVEN" || cell.status === "CORRECT_GUESS" ? (
         <span
@@ -82,6 +95,13 @@ const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
           onKeyDown={(e) => handleKeyDown(e, rIdx, cIdx)}
           className="outline-none cursor-pointer select-none block w-8 h-8 leading-8 mx-auto"
           aria-label={`Cell ${rIdx + 1}, ${cIdx + 1}, value ${cell.value}`}
+          onFocus={() => {
+            if (removalMode && isRemovable && onCellInput) {
+              onCellInput({ type: "REMOVE", row: rIdx, col: cIdx });
+            } else {
+              setSelected({ row: rIdx, col: cIdx });
+            }
+          }}
         >
           {cell.value !== 0 ? cell.value : ""}
         </span>
@@ -92,12 +112,18 @@ const CellWithCooldown: React.FC<CellWithCooldownProps> = ({
             min={1}
             max={9}
             value={cell.value && cell.value !== 0 ? cell.value : ""}
-            disabled={disabled || isOnCooldown}
+            disabled={disabled || isOnCooldown || removalMode}
             ref={(el) => {
               cellRefs.current[rIdx] = cellRefs.current[rIdx] || [];
               cellRefs.current[rIdx][cIdx] = el;
             }}
-            onFocus={() => setSelected({ row: rIdx, col: cIdx })}
+            onFocus={() => {
+              if (removalMode && isRemovable && onCellInput) {
+                onCellInput({ type: "REMOVE", row: rIdx, col: cIdx });
+              } else {
+                setSelected({ row: rIdx, col: cIdx });
+              }
+            }}
             onChange={(e) => {
               if (onCellInput) {
                 const val = parseInt(e.target.value, 10);

@@ -7,10 +7,16 @@ const SudokuBoard = ({
   board,
   onCellInput,
   disabled,
+  removalMode,
+  boardSessionId,
+  mySessionId,
 }: {
   board: Cell[][];
   onCellInput?: (action: GameAction) => void;
   disabled?: boolean;
+  removalMode?: boolean;
+  boardSessionId: string;
+  mySessionId: string;
 }) => {
   // Track selected cell
   const [selected, setSelected] = useState<{ row: number; col: number } | null>(
@@ -72,6 +78,15 @@ const SudokuBoard = ({
     setSelected({ row: nextRow, col: nextCol });
   };
 
+  // Custom onCellInput for removal mode to always include correct sessionId
+  const handleCellInput = (action: GameAction) => {
+    if (removalMode && onCellInput && action.type === "REMOVE") {
+      onCellInput({ ...action, sessionId: boardSessionId });
+    } else if (onCellInput && action.type === "FILL") {
+      onCellInput({ ...action, sessionId: mySessionId });
+    }
+  };
+
   return (
     <table className="border-collapse">
       <tbody>
@@ -86,10 +101,11 @@ const SudokuBoard = ({
                 cIdx={cIdx}
                 disabled={disabled}
                 cellRefs={cellRefs}
-                onCellInput={onCellInput}
+                onCellInput={handleCellInput}
                 setSelected={setSelected}
                 handleKeyDown={handleKeyDown}
                 cooldownUntil={cell.cooldownUntil!}
+                removalMode={removalMode}
               />
             ))}
           </tr>

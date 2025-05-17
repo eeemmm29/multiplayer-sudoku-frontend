@@ -194,9 +194,7 @@ const GamePage = () => {
             {sessionIds.map((playerId) => (
               <div key={playerId}>
                 <h2 className="font-semibold mb-2">
-                  {playerId === sessionId
-                    ? "Your Board"
-                    : `Player ${playerId.slice(-4)}`}
+                  {playerId === sessionId ? "Your Board" : `Player ${playerId}`}
                 </h2>
                 {/* Steps to completion */}
                 <div className="mb-2 text-sm text-gray-700 font-medium">
@@ -243,7 +241,10 @@ const GamePage = () => {
                             )
                         : undefined
                   }
-                  disabled={playerId !== sessionId && !removalMode}
+                  disabled={playerId !== sessionId}
+                  removalMode={removalMode}
+                  boardSessionId={playerId}
+                  mySessionId={sessionId ?? ""}
                 />
               </div>
             ))}
