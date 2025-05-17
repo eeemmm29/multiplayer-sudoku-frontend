@@ -60,7 +60,7 @@ export const siteConfig = {
     },
   ],
   links: {
-    github: "https://github.com/eeemmm29/multiplayer-sudoku-frontend",
+    github: "https://github.com/eeemmm29/multiplayer-sudoku",
     // twitter: "https://twitter.com/hero_ui",
     // docs: "https://heroui.com",
     // discord: "https://discord.gg/9b6yyZKmH4",
