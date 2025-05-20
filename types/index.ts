@@ -8,6 +8,9 @@ export type ModalMode = "create" | "join" | null;
 
 export interface JoinRoomForm {
   roomCode: string;
+  maxStepGap?: number;
+  cooldownSeconds?: number;
+  difficulty?: string;
 }
 
 export interface CreateRoomResponse {
@@ -29,4 +32,7 @@ export type BoardsListMessage = {
   removeCooldownUntil?: number;
   canRemoveOpponentCellMap?: Record<string, boolean>;
   removeCooldownUntilMap?: Record<string, number>;
+  maxStepGap?: number;
+  cooldownSeconds?: number;
+  difficulty?: string;
 };

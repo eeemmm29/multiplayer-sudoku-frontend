@@ -141,6 +141,10 @@ const GamePage = () => {
     sessionIds = [sessionId, ...sessionIds.filter((id) => id !== sessionId)];
   }
 
+  // Show room settings if available
+  const maxStepGap = boards?.maxStepGap;
+  const cooldownSeconds = boards?.cooldownSeconds;
+
   if (!boards) return null;
 
   // Show all boards, but only allow editing for the current user's board
@@ -174,6 +178,19 @@ const GamePage = () => {
             Players in room: {boards.playerCount}
           </span>
         ) : null}
+        {maxStepGap !== undefined && cooldownSeconds !== undefined && (
+          <span className="text-gray-700 mt-1">
+            <b>Power-up settings:</b> Step gap: {maxStepGap}, Cooldown:{" "}
+            {cooldownSeconds}s
+          </span>
+        )}
+        {boards.difficulty && (
+          <span className="text-gray-700 mt-1">
+            <b>Difficulty:</b>{" "}
+            {boards.difficulty.charAt(0) +
+              boards.difficulty.slice(1).toLowerCase()}
+          </span>
+        )}
         <br />
         {!gameStarted && boards.playerCount === 2 ? (
           <Button className="bg-blue-500 rounded" onPress={startGame}>

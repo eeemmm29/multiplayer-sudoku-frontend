@@ -9,6 +9,8 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@heroui/modal";
+import { NumberInput } from "@heroui/number-input";
+import { Select, SelectItem } from "@heroui/select";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 
@@ -32,16 +34,25 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
     mode === "create" ? "A new room will be created" : "Join a Room";
 
   const onSubmit = async (data: JoinRoomForm) => {
+    console.log("data", data);
     if (mode === "create") {
       try {
+        const maxStepGap = data.maxStepGap ? Number(data.maxStepGap) : 1;
+        const cooldownSeconds = data.cooldownSeconds
+          ? Number(data.cooldownSeconds)
+          : 10;
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/room`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              // Optionally add session id header if needed
             },
+            body: JSON.stringify({
+              maxStepGap,
+              cooldownSeconds,
+              difficulty: data.difficulty ?? "EASY",
+            }),
           }
         );
         if (!res.ok) throw new Error("Failed to create room");
@@ -51,7 +62,6 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
           onClose();
         }
       } catch (e) {
-        // Optionally handle error
         alert("Failed to create room");
       }
     } else if (mode === "join") {
@@ -92,6 +102,64 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
                     errorMessage={error?.message}
                     {...field}
                   />
+                )}
+              />
+            </ModalBody>
+          )}
+          {mode === "create" && (
+            <ModalBody className="w-full">
+              <Controller
+                name="maxStepGap"
+                control={control}
+                defaultValue={1}
+                render={({ field }) => (
+                  <NumberInput
+                    label="Max Step Gap (for power-up)"
+                    min={1}
+                    max={20}
+                    // onChange={(e) =>
+                    //   field.onChange(parseInt(e.target.value, 10) || 1)
+                    // }
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="cooldownSeconds"
+                control={control}
+                defaultValue={10}
+                render={({ field }) => (
+                  <NumberInput
+                    label="Cooldown Seconds (for power-up)"
+                    min={1}
+                    max={120}
+                    // onChange={(e) =>
+                    //   field.onChange(parseInt(e.target.value, 10) || 1)
+                    // }
+                    {...field}
+                  />
+                )}
+              />
+              <Controller
+                name="difficulty"
+                control={control}
+                defaultValue={"EASY"}
+                render={({ field }) => (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">
+                      Difficulty
+                    </label>
+                    <Select
+                      label="Select difficulty"
+                      defaultSelectedKeys={["EASY"]}
+                      {...field}
+                    >
+                      <SelectItem key="EASY">Easy</SelectItem>
+                      <SelectItem key="MEDIUM">Medium</SelectItem>
+                      <SelectItem key="HARD">Hard</SelectItem>
+                      <SelectItem key="EXPERT">Expert</SelectItem>
+                    </Select>
+                  </div>
                 )}
               />
             </ModalBody>
