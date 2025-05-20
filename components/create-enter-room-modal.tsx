@@ -1,4 +1,4 @@
-import { CreateRoomResponse, JoinRoomForm, ModalMode } from "@/types";
+import { CreateRoomResponse, CreateEnterRoomForm, ModalMode } from "@/types";
 import { Button } from "@heroui/button";
 import { Form } from "@heroui/form";
 import { Input } from "@heroui/input";
@@ -27,13 +27,13 @@ const CreateEnterRoomModal: React.FC<CreateEnterRoomModalProps> = ({
   onClose,
   mode,
 }) => {
-  const { control, handleSubmit } = useForm<JoinRoomForm>();
+  const { control, handleSubmit } = useForm<CreateEnterRoomForm>();
   const router = useRouter();
 
   const headerText =
     mode === "create" ? "A new room will be created" : "Join a Room";
 
-  const onSubmit = async (data: JoinRoomForm) => {
+  const onSubmit = async (data: CreateEnterRoomForm) => {
     console.log("data", data);
     if (mode === "create") {
       try {

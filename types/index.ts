@@ -6,7 +6,7 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
 
 export type ModalMode = "create" | "join" | null;
 
-export interface JoinRoomForm {
+export interface CreateEnterRoomForm {
   roomCode: string;
   maxStepGap?: number;
   cooldownSeconds?: number;
