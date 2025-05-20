@@ -241,8 +241,12 @@ const GamePage = () => {
                             )
                         : undefined
                   }
-                  disabled={playerId !== sessionId}
-                  removalMode={removalMode}
+                  disabled={
+                    removalMode
+                      ? playerId === sessionId
+                      : playerId !== sessionId
+                  }
+                  removalMode={removalMode && playerId !== sessionId}
                   boardSessionId={playerId}
                   mySessionId={sessionId ?? ""}
                 />
