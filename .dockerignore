@@ -11,7 +11,6 @@ logs/
 npm-debug.log*
 
 # Env and credentials
-.env
 .env.*
 *.local
 
