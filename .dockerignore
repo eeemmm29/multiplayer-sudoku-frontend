@@ -1,0 +1,32 @@
+# Ignore node modules and build output
+node_modules/
+.next/
+out/
+.cache/
+dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Env and credentials
+.env
+.env.*
+*.local
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitattributes
+.gitignore
+
+# Docker
+Dockerfile
+
+# Misc
+*.md
