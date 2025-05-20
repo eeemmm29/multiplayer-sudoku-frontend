@@ -84,6 +84,13 @@ const SudokuBoard = ({
       onCellInput({ ...action, sessionId: boardSessionId });
     } else if (onCellInput && action.type === "FILL") {
       onCellInput({ ...action, sessionId: mySessionId });
+    } else if (
+      onCellInput &&
+      action.type === "REMOVE" &&
+      boardSessionId === mySessionId
+    ) {
+      // Allow self-removal (e.g., clear wrong guess) when not in removal mode
+      onCellInput({ ...action, sessionId: mySessionId });
     }
   };
 
