@@ -1,7 +1,7 @@
 "use client";
 
 import ButtonWithLabels from "@/components/button-with-labels";
-import CreateEnterRoomModal from "@/components/create-room-modal";
+import CreateEnterRoomModal from "@/components/create-enter-room-modal";
 import { GithubIcon } from "@/components/icons";
 import { title } from "@/components/primitives";
 import { siteConfig } from "@/config/site";
