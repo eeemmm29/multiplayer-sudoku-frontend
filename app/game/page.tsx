@@ -88,16 +88,31 @@ const GamePage = () => {
     boards?.canRemoveOpponentCellMap && sessionId
       ? boards.canRemoveOpponentCellMap[sessionId]
       : false;
-  const removalCooldown =
-    boards?.removeCooldownUntilMap && sessionId
-      ? Math.max(
-          0,
-          Math.ceil(
-            ((boards.removeCooldownUntilMap[sessionId] || 0) - Date.now()) /
-              1000
-          )
+
+  // Real-time updating removalCooldown
+  const getRemovalCooldown = () => {
+    if (boards?.removeCooldownUntilMap && sessionId) {
+      return Math.max(
+        0,
+        Math.ceil(
+          ((boards.removeCooldownUntilMap[sessionId] || 0) - Date.now()) / 1000
         )
-      : 0;
+      );
+    }
+    return 0;
+  };
+
+  const [removalCooldown, setRemovalCooldown] = useState(getRemovalCooldown());
+
+  useEffect(() => {
+    setRemovalCooldown(getRemovalCooldown()); // update immediately on boards/sessionId change
+    if (!boards || !sessionId) return;
+    if (getRemovalCooldown() === 0) return;
+    const interval = setInterval(() => {
+      setRemovalCooldown(getRemovalCooldown());
+    }, 500);
+    return () => clearInterval(interval);
+  }, [boards, sessionId]);
 
   const handleRemoveClick = () => {
     setRemovalMode((m) => !m);
@@ -171,25 +186,6 @@ const GamePage = () => {
       </div>
       {gameStarted && (
         <div className="flex flex-col items-center gap-4">
-          <div className="mb-4">
-            <ButtonWithLabels
-              labelJapanese="数字を消す"
-              labelEnglish="Remove Number"
-              isDisabled={!canRemoveOpponentCell || removalCooldown > 0}
-              onPress={handleRemoveClick}
-              className={removalMode ? "ring-2 ring-red-400" : ""}
-            />
-            {removalCooldown > 0 && (
-              <span className="ml-2 text-sm text-gray-500">
-                Cooldown: {removalCooldown}s
-              </span>
-            )}
-            {removalMode && (
-              <span className="ml-2 text-sm text-red-500">
-                Click a cell on your opponent's board to remove
-              </span>
-            )}
-          </div>
           <div className="flex gap-12">
             {sessionIds.map((playerId) => (
               <div key={playerId}>
@@ -242,14 +238,39 @@ const GamePage = () => {
                         : undefined
                   }
                   disabled={
-                    removalMode
-                      ? playerId === sessionId
-                      : playerId !== sessionId
+                    playerId === sessionId
+                      ? removalMode && canRemoveOpponentCell
+                      : removalMode
                   }
                   removalMode={removalMode && playerId !== sessionId}
                   boardSessionId={playerId}
                   mySessionId={sessionId ?? ""}
                 />
+                {/* Remove button and info only for current user */}
+                {playerId === sessionId && gameStarted && (
+                  <div className="flex-col mb-4 mt-2 flex items-center">
+                    <Button
+                      color="primary"
+                      isDisabled={!canRemoveOpponentCell || removalCooldown > 0}
+                      onPress={handleRemoveClick}
+                      className={removalMode ? "ring-2 ring-red-400" : ""}
+                    >
+                      Remove a number from opponent's board
+                    </Button>
+                    <div className="flex flex-col items-center mt-1">
+                      {removalCooldown > 0 && (
+                        <span className="text-sm text-gray-500">
+                          Cooldown: {removalCooldown}s
+                        </span>
+                      )}
+                      {removalMode && (
+                        <span className="text-sm text-red-500">
+                          Click a cell on your opponent's board to remove
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
